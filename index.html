@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a" id="themeColorMeta">
+<meta name="description" content="TimeXpert – Smart Daily Scheduling PWA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TimeXpert">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="TimeXpert">
+<title>TimeXpert – Smart Scheduler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* ─── DESIGN TOKENS ──────────────────────────────────────────────────── */
+:root {
+  --green:#22c55e;--green-d:#16a34a;
+  --blue:#3b82f6;--blue-d:#2563eb;
+  --sky:#38bdf8;--yellow:#facc15;
+  --red:#ef4444;--purple:#a855f7;--orange:#f97316;
+  --white:#ffffff;--black:#0f172a;
+
+  --bg:#f0f4ff;--surface:#ffffff;--surface2:#f8faff;--surface3:#eef3ff;
+  --border:rgba(59,130,246,.15);--border2:rgba(59,130,246,.08);
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;--text4:#cbd5e1;
+  --shadow:0 4px 24px rgba(59,130,246,.10);
+  --shadow-lg:0 12px 40px rgba(59,130,246,.18);
+  --shadow-xl:0 24px 64px rgba(59,130,246,.22);
+
+  --grad-hero:linear-gradient(135deg,#0f172a 0%,#1e3a5f 60%,#0f2f1e 100%);
+  --grad-card:linear-gradient(135deg,var(--blue) 0%,var(--purple) 100%);
+  --grad-green:linear-gradient(135deg,var(--green) 0%,var(--sky) 100%);
+  --grad-red:linear-gradient(135deg,var(--red) 0%,var(--orange) 100%);
+  --grad-note:linear-gradient(135deg,#f97316 0%,#facc15 100%);
+
+  --radius:14px;--radius-lg:22px;--radius-xl:30px;
+  --trans:all .25s cubic-bezier(.4,0,.2,1);
+  --trans-spring:all .4s cubic-bezier(.2,1.2,.4,1);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+[data-theme="dark"]{
+  --bg:#060b18;--surface:#0e1628;--surface2:#131e35;--surface3:#0a1220;
+  --border:rgba(56,189,248,.12);--border2:rgba(56,189,248,.06);
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;--text4:#1e293b;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+  --shadow-lg:0 12px 40px rgba(0,0,0,.6);
+  --shadow-xl:0 24px 64px rgba(0,0,0,.75);
+}
+
+/* ─── RESET ───────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;transition:background .3s,color .3s;
+  overflow-x:hidden;-webkit-font-smoothing:antialiased;
+}
+button{cursor:pointer;border:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
+input,textarea,select{font-family:inherit;border:none;outline:none;-webkit-appearance:none}
+ul{list-style:none}a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+
+/* ─── SCROLLBAR ───────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--blue);border-radius:99px}
+
+/* ─── BOTTOM NAV ──────────────────────────────────────────────────── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:stretch;
+  padding-bottom:var(--safe-bottom);
+  box-shadow:0 -4px 20px rgba(0,0,0,.08);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:10px 4px 8px;gap:4px;
+  cursor:pointer;transition:var(--trans);
+  position:relative;border:none;background:none;
+  color:var(--text3);font-size:.65rem;font-weight:600;
+  letter-spacing:.3px;text-transform:uppercase;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-item .nav-icon{
+  font-size:1.35rem;transition:var(--trans);
+  line-height:1;
+}
+.nav-item.active{color:var(--blue)}
+.nav-item.active .nav-icon{transform:scale(1.15)}
+.nav-item::after{
+  content:'';position:absolute;top:0;left:20%;right:20%;height:2px;
+  border-radius:0 0 4px 4px;background:var(--blue);
+  transform:scaleX(0);transition:var(--trans);transform-origin:center;
+}
+.nav-item.active::after{transform:scaleX(1)}
+.nav-badge{
+  position:absolute;top:6px;right:calc(50% - 16px);
+  background:var(--red);color:#fff;
+  font-size:.55rem;font-weight:700;
+  min-width:16px;height:16px;border-radius:99px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;border:2px solid var(--surface);
+}
+
+/* ─── PAGES ───────────────────────────────────────────────────────── */
+.page{display:none;min-height:100vh;padding-bottom:calc(80px + var(--safe-bottom))}
+.page.active{display:block}
+.page-enter{animation:pageIn .35s cubic-bezier(.4,0,.2,1) both}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── HEADER ──────────────────────────────────────────────────────── */
+.header{
+  position:sticky;top:0;z-index:90;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding:0 16px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:var(--shadow);
+}
+.logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:1.25rem;
+  background:var(--grad-card);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.logo-icon{
+  width:34px;height:34px;border-radius:10px;
+  background:var(--grad-card);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1rem;flex-shrink:0;
+}
+.header-right{display:flex;align-items:center;gap:8px}
+.hdr-btn{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;transition:var(--trans);position:relative;
+}
+.hdr-btn:hover{transform:scale(1.08)}
+.notif-dot{
+  position:absolute;top:5px;right:5px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--red);border:2px solid var(--surface);display:none;
+}
+
+/* ─── HERO ────────────────────────────────────────────────────────── */
+.hero{
+  background:var(--grad-hero);
+  padding:24px 16px 28px;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 80% at 80% 50%,rgba(59,130,246,.25),transparent),
+             radial-gradient(ellipse 40% 60% at 10% 80%,rgba(168,85,247,.18),transparent);
+}
+.hero-inner{position:relative;max-width:900px;margin:0 auto}
+.hero-eyebrow{font-size:.72rem;font-weight:600;letter-spacing:2px;color:var(--sky);text-transform:uppercase;margin-bottom:5px}
+.hero-title{
+  font-family:'Space Grotesk',sans-serif;font-size:clamp(1.4rem,4vw,2.2rem);
+  font-weight:700;color:#fff;line-height:1.2;margin-bottom:5px;
+}
+.hero-date{font-size:.82rem;color:rgba(255,255,255,.55);margin-bottom:18px}
+.hero-chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{
+  padding:6px 14px;border-radius:99px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(8px);display:flex;align-items:center;gap:7px;
+  font-size:.78rem;color:rgba(255,255,255,.9);transition:var(--trans);
+}
+.chip:hover{background:rgba(255,255,255,.13)}
+.chip-dot{width:7px;height:7px;border-radius:50%}
+
+/* ─── TOOLBAR ─────────────────────────────────────────────────────── */
+.toolbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  position:sticky;top:60px;z-index:80;
+}
+.search-wrap{flex:1;min-width:160px;position:relative}
+.search-wrap input{
+  width:100%;padding:9px 12px 9px 36px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:99px;font-size:.85rem;color:var(--text);transition:var(--trans);
+}
+.search-wrap input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1);background:var(--surface)}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:.85rem;color:var(--text3);pointer-events:none}
+.filter-btn{
+  padding:8px 14px;border-radius:99px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  font-size:.78rem;font-weight:600;color:var(--text2);
+  display:flex;align-items:center;gap:5px;transition:var(--trans);white-space:nowrap;
+}
+.filter-btn:hover,.filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.sort-select{
+  padding:8px 12px;border-radius:99px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  font-size:.78rem;color:var(--text2);cursor:pointer;transition:var(--trans);
+}
+
+/* ─── MAIN CONTAINER ──────────────────────────────────────────────── */
+.main{max-width:900px;margin:0 auto;padding:20px 14px 16px}
+
+/* ─── STATS GRID ──────────────────────────────────────────────────── */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
+  margin-bottom:22px;
+}
+@media(min-width:480px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:14px 12px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+  transition:var(--trans);
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-card::after{
+  content:'';position:absolute;bottom:-12px;right:-12px;
+  width:60px;height:60px;border-radius:50%;opacity:.1;
+}
+.sc1::after{background:var(--blue)}
+.sc2::after{background:var(--green)}
+.sc3::after{background:var(--red)}
+.sc4::after{background:var(--purple)}
+.stat-num{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:1.7rem;line-height:1;margin-bottom:3px;
+}
+.sc1 .stat-num{color:var(--blue)}
+.sc2 .stat-num{color:var(--green)}
+.sc3 .stat-num{color:var(--red)}
+.sc4 .stat-num{color:var(--purple)}
+.stat-lbl{font-size:.72rem;color:var(--text2);font-weight:500}
+
+/* ─── TABS ────────────────────────────────────────────────────────── */
+.tabs{
+  display:flex;gap:3px;background:var(--surface2);
+  border-radius:99px;padding:4px;border:1px solid var(--border);
+  margin-bottom:18px;overflow-x:auto;scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:1;padding:7px 6px;border-radius:99px;font-size:.76rem;font-weight:600;
+  color:var(--text3);cursor:pointer;transition:var(--trans);
+  text-align:center;background:transparent;border:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.tab.active{background:var(--surface);color:var(--blue);box-shadow:var(--shadow)}
+
+/* ─── SECTION ─────────────────────────────────────────────────────── */
+.section{margin-bottom:26px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;
+  color:var(--text);display:flex;align-items:center;gap:7px;
+}
+.sect-badge{
+  padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;
+  background:var(--blue);color:#fff;
+}
+
+/* ─── CARD GRID ───────────────────────────────────────────────────── */
+.card-grid{display:flex;flex-direction:column;gap:10px}
+@media(min-width:580px){.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+@media(min-width:860px){.card-grid{grid-template-columns:1fr 1fr 1fr}}
+
+/* ─── TASK CARD ───────────────────────────────────────────────────── */
+.task-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:14px 16px;
+  display:flex;align-items:flex-start;gap:12px;
+  box-shadow:var(--shadow);transition:var(--trans);
+  cursor:pointer;position:relative;overflow:hidden;
+  animation:cardIn .35s ease both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.task-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:4px;border-radius:2px 0 0 2px;
+}
+.task-card.pri-high::before{background:var(--red)}
+.task-card.pri-med::before{background:var(--yellow)}
+.task-card.pri-low::before{background:var(--green)}
+.task-card.st-done{opacity:.6}
+.task-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:rgba(59,130,246,.25)}
+.task-card:active{transform:scale(.99)}
+
+.chk{
+  width:21px;height:21px;border-radius:50%;
+  border:2px solid var(--border);flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--trans);cursor:pointer;background:transparent;font-size:.65rem;color:transparent;
+}
+.chk.on{background:var(--green);border-color:var(--green);color:#fff}
+.task-body{flex:1;min-width:0}
+.task-title{
+  font-weight:600;font-size:.9rem;color:var(--text);
+  margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.st-done .task-title{text-decoration:line-through;color:var(--text3)}
+.task-desc{
+  font-size:.76rem;color:var(--text2);
+  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;
+  overflow:hidden;margin-bottom:7px;
+}
+.task-meta{display:flex;flex-wrap:wrap;gap:5px}
+.mc{
+  padding:3px 8px;border-radius:99px;
+  font-size:.68rem;font-weight:500;
+  display:flex;align-items:center;gap:3px;
+}
+.mc-time{background:rgba(59,130,246,.1);color:var(--blue)}
+.mc-date{background:rgba(56,189,248,.1);color:var(--sky)}
+.mc-rem{background:rgba(168,85,247,.1);color:var(--purple)}
+.mc-done{background:rgba(34,197,94,.1);color:var(--green)}
+.mc-miss{background:rgba(239,68,68,.1);color:var(--red)}
+.mc-pend{background:rgba(250,204,21,.1);color:#a16207}
+.mc-cat{background:rgba(56,189,248,.08);color:var(--sky)}
+.task-acts{
+  display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;
+}
+.iBtn{
+  width:28px;height:28px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;transition:var(--trans);
+  background:transparent;color:var(--text3);
+}
+.iBtn:hover.eBtn{background:rgba(59,130,246,.1);color:var(--blue)}
+.iBtn:hover.dBtn{background:rgba(239,68,68,.1);color:var(--red)}
+.iBtn.waBtn:hover{background:rgba(37,211,102,.12);color:#25d366}
+
+/* ─── EMPTY STATE ─────────────────────────────────────────────────── */
+.empty{
+  grid-column:1/-1;text-align:center;padding:44px 20px;
+  animation:fadeIn .4s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.empty-illo{font-size:3rem;margin-bottom:12px;opacity:.45;display:block;line-height:1}
+.empty-h{font-weight:600;color:var(--text2);font-size:.92rem;margin-bottom:4px}
+.empty-p{font-size:.8rem;color:var(--text3)}
+
+/* ─── FAB ─────────────────────────────────────────────────────────── */
+.fab{
+  position:fixed;
+  bottom:calc(70px + var(--safe-bottom) + 16px);
+  right:18px;z-index:150;
+  width:54px;height:54px;border-radius:50%;
+  background:var(--grad-card);color:#fff;
+  font-size:1.5rem;font-weight:300;
+  box-shadow:0 6px 24px rgba(59,130,246,.45);
+  display:flex;align-items:center;justify-content:center;
+  transition:var(--trans);border:none;
+}
+.fab:hover{transform:scale(1.1) rotate(45deg)}
+.fab:active{transform:scale(.95) rotate(45deg)}
+
+/* ─── OVERLAY / MODAL ─────────────────────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--surface);
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  width:100%;max-width:580px;
+  padding:0 0 calc(20px + var(--safe-bottom));
+  max-height:94vh;overflow-y:auto;
+  transform:translateY(40px);
+  transition:transform .38s cubic-bezier(.2,1.2,.4,1);
+}
+.overlay.open .modal{transform:translateY(0)}
+.modal-handle{
+  width:38px;height:4px;border-radius:2px;
+  background:var(--border);margin:12px auto 0;
+}
+.modal-hdr{
+  padding:14px 20px 12px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:var(--surface);z-index:10;
+}
+.modal-title{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;
+  background:var(--grad-card);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.modal-x{
+  width:30px;height:30px;border-radius:8px;background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;color:var(--text2);transition:var(--trans);
+}
+.modal-x:hover{background:rgba(239,68,68,.1);color:var(--red)}
+.modal-body{padding:16px 20px}
+.modal-foot{
+  padding:12px 20px 0;display:flex;gap:8px;
+  border-top:1px solid var(--border);
+  position:sticky;bottom:0;background:var(--surface);
+}
+
+/* ─── FORM CONTROLS ───────────────────────────────────────────────── */
+.fg{margin-bottom:14px}
+.fl{
+  display:block;font-size:.74rem;font-weight:600;
+  color:var(--text2);letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;
+}
+.fi,.fta,.fse{
+  width:100%;padding:10px 13px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:var(--radius);color:var(--text);font-size:.88rem;transition:var(--trans);
+}
+.fi:focus,.fta:focus,.fse:focus{
+  border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1);background:var(--surface);
+}
+.fta{resize:vertical;min-height:70px}
+.fse{cursor:pointer}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:380px){.frow{grid-template-columns:1fr}}
+
+/* Priority pills */
+.pri-row{display:flex;gap:7px}
+.pri-btn{
+  flex:1;padding:8px;border-radius:var(--radius);
+  background:var(--surface2);border:1.5px solid var(--border);
+  font-size:.76rem;font-weight:600;cursor:pointer;transition:var(--trans);
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.pri-high{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red)}
+.pri-med{background:rgba(250,204,21,.1);border-color:var(--yellow);color:#a16207}
+.pri-low{background:rgba(34,197,94,.1);border-color:var(--green);color:var(--green)}
+
+/* Reminder pills */
+.rem-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}
+.rem-pill{
+  padding:6px 12px;border-radius:99px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  font-size:.74rem;font-weight:500;color:var(--text2);cursor:pointer;transition:var(--trans);
+}
+.rem-pill:hover,.rem-pill.sel{background:rgba(168,85,247,.1);border-color:var(--purple);color:var(--purple)}
+.cust-rem{display:none;margin-top:8px;gap:7px;align-items:center}
+.cust-rem.show{display:flex}
+.cust-rem input{width:80px;padding:8px 10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text)}
+.cust-rem select{flex:1;padding:8px 10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer}
+
+/* Buttons */
+.btn{
+  padding:10px 18px;border-radius:99px;
+  font-size:.85rem;font-weight:600;
+  display:flex;align-items:center;gap:5px;
+  transition:var(--trans);border:none;cursor:pointer;
+  white-space:nowrap;
+}
+.btn-primary{
+  flex:1;background:var(--grad-card);color:#fff;
+  box-shadow:0 4px 14px rgba(59,130,246,.3);justify-content:center;
+}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(59,130,246,.45);transform:translateY(-1px)}
+.btn-ghost{background:var(--surface2);border:1.5px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-danger{background:rgba(239,68,68,.08);border:1.5px solid var(--red);color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-green{background:var(--grad-green);color:#fff;justify-content:center}
+.btn-green:hover{opacity:.9;transform:translateY(-1px)}
+.btn-wa{background:#25d366;color:#fff;justify-content:center}
+.btn-wa:hover{background:#128c7e;transform:translateY(-1px)}
+
+/* ─── DETAIL MODAL ────────────────────────────────────────────────── */
+.detail-banner{height:6px;border-radius:0}
+.det-sec{margin-bottom:14px}
+.det-lbl{font-size:.7rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+.det-val{font-size:.9rem;color:var(--text);line-height:1.6}
+
+/* ─── TOAST ───────────────────────────────────────────────────────── */
+.toast-wrap{
+  position:fixed;bottom:calc(80px + var(--safe-bottom) + 8px);
+  left:50%;transform:translateX(-50%);
+  z-index:500;display:flex;flex-direction:column;
+  align-items:center;gap:7px;pointer-events:none;
+  width:min(340px,90vw);
+}
+.toast{
+  background:var(--black);color:#fff;
+  padding:11px 17px;border-radius:99px;
+  font-size:.82rem;font-weight:500;
+  box-shadow:0 6px 24px rgba(0,0,0,.4);
+  display:flex;align-items:center;gap:7px;
+  animation:toastIn .35s cubic-bezier(.2,1.2,.4,1) forwards;
+  pointer-events:auto;
+}
+[data-theme="dark"] .toast{background:var(--surface2);border:1px solid var(--border)}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.toast.out{animation:toastOut .3s ease forwards}
+@keyframes toastOut{to{opacity:0;transform:translateY(8px)}}
+.ti-success{color:var(--green)}.ti-error{color:var(--red)}.ti-info{color:var(--sky)}.ti-warn{color:var(--yellow)}
+
+/* ─── SKELETON ────────────────────────────────────────────────────── */
+.skel{
+  background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);
+  background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:var(--radius);
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ─── CONFIRM DIALOG ──────────────────────────────────────────────── */
+.confirm-overlay{
+  position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;
+  padding:20px;
+}
+.confirm-overlay.open{display:flex}
+.confirm-box{
+  background:var(--surface);border-radius:var(--radius-lg);
+  padding:24px 22px;width:min(340px,100%);
+  box-shadow:var(--shadow-xl);
+  animation:popIn .35s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes popIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.confirm-icon{font-size:2.2rem;text-align:center;margin-bottom:12px;display:block}
+.confirm-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;text-align:center;margin-bottom:6px}
+.confirm-msg{font-size:.85rem;color:var(--text2);text-align:center;line-height:1.55;margin-bottom:20px}
+.confirm-btns{display:flex;gap:10px}
+
+/* ─── REMINDER POPUP ──────────────────────────────────────────────── */
+.alarm-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.alarm-overlay.open{display:flex}
+.alarm-card{
+  background:var(--surface);border-radius:var(--radius-xl);
+  padding:30px 24px;width:min(360px,100%);text-align:center;
+  box-shadow:var(--shadow-xl);
+  animation:popIn .4s cubic-bezier(.2,1.2,.4,1);
+}
+.alarm-bell{font-size:3.5rem;display:block;margin-bottom:14px;animation:swing .5s ease infinite alternate}
+@keyframes swing{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}
+.alarm-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem;margin-bottom:5px}
+.alarm-sub{font-size:.84rem;color:var(--text2);margin-bottom:20px}
+.alarm-btns{display:flex;flex-direction:column;gap:8px}
+.alarm-dismiss{
+  padding:12px;border-radius:99px;background:var(--grad-card);color:#fff;
+  font-weight:600;font-size:.9rem;transition:var(--trans);border:none;cursor:pointer;
+}
+.alarm-dismiss:hover{opacity:.88}
+.alarm-snooze{
+  padding:10px;border-radius:99px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  color:var(--text2);font-weight:600;font-size:.85rem;transition:var(--trans);cursor:pointer;
+}
+.alarm-snooze:hover{border-color:var(--orange);color:var(--orange)}
+
+/* ─── NOTES PAGE ──────────────────────────────────────────────────── */
+.notes-toolbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:10px 14px;display:flex;gap:8px;align-items:center;
+  position:sticky;top:60px;z-index:80;
+}
+.notes-search{flex:1;position:relative}
+.notes-search input{
+  width:100%;padding:9px 12px 9px 36px;
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:99px;font-size:.85rem;color:var(--text);transition:var(--trans);
+}
+.notes-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.notes-grid{
+  display:grid;gap:12px;padding:16px 14px;max-width:900px;margin:0 auto;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+}
+.note-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px;cursor:pointer;
+  box-shadow:var(--shadow);transition:var(--trans);
+  animation:cardIn .35s ease both;position:relative;overflow:hidden;
+}
+.note-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.note-card:active{transform:scale(.99)}
+.note-accent{
+  height:5px;border-radius:5px 5px 0 0;
+  position:absolute;top:0;left:0;right:0;
+}
+.note-title{font-weight:700;font-size:.92rem;color:var(--text);margin-bottom:5px;margin-top:8px}
+.note-body{
+  font-size:.8rem;color:var(--text2);line-height:1.6;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+  margin-bottom:10px;white-space:pre-wrap;
+}
+.note-footer{display:flex;align-items:center;justify-content:space-between}
+.note-date{font-size:.7rem;color:var(--text3)}
+.note-acts{display:flex;gap:5px}
+.note-act{
+  width:28px;height:28px;border-radius:8px;background:transparent;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.78rem;color:var(--text3);transition:var(--trans);
+}
+.note-act:hover.ne{background:rgba(59,130,246,.1);color:var(--blue)}
+.note-act:hover.nd{background:rgba(239,68,68,.1);color:var(--red)}
+.note-act:hover.nwa{background:rgba(37,211,102,.12);color:#25d366}
+
+/* Note editor modal */
+.note-editor-body{padding:16px 20px}
+.note-title-input{
+  width:100%;padding:10px 0;font-size:1.05rem;font-weight:700;
+  background:transparent;border:none;border-bottom:2px solid var(--border);
+  color:var(--text);margin-bottom:14px;transition:var(--trans);
+}
+.note-title-input:focus{border-bottom-color:var(--blue);outline:none}
+.note-content-input{
+  width:100%;min-height:220px;padding:0;resize:none;
+  background:transparent;border:none;color:var(--text);
+  font-size:.9rem;line-height:1.7;
+}
+.note-content-input:focus{outline:none}
+.note-color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.nc-btn{
+  width:28px;height:28px;border-radius:50%;cursor:pointer;
+  border:2.5px solid transparent;transition:var(--trans);
+}
+.nc-btn.sel,.nc-btn:hover{transform:scale(1.15);border-color:var(--text)}
+.auto-save-ind{
+  font-size:.72rem;color:var(--text3);
+  display:flex;align-items:center;gap:5px;padding:0 20px 10px;
+}
+.auto-save-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--green);transition:var(--trans);
+}
+.auto-save-dot.saving{background:var(--yellow);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ─── SETTINGS PAGE ───────────────────────────────────────────────── */
+.settings-main{max-width:680px;margin:0 auto;padding:20px 14px 16px}
+.set-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg);overflow:hidden;
+  box-shadow:var(--shadow);margin-bottom:20px;
+}
+.set-hdr{
+  padding:14px 18px 12px;
+  border-bottom:1px solid var(--border);
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.92rem;
+  display:flex;align-items:center;gap:8px;
+}
+.set-row{
+  padding:14px 18px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border2);gap:14px;
+  transition:var(--trans);
+}
+.set-row:last-child{border-bottom:none}
+.set-row:hover{background:var(--surface2)}
+.set-info{}
+.set-label{font-size:.9rem;font-weight:500;color:var(--text);margin-bottom:2px}
+.set-desc{font-size:.76rem;color:var(--text3)}
+.set-action{flex-shrink:0}
+
+/* Toggle switch */
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{
+  position:absolute;inset:0;border-radius:99px;
+  background:var(--border);cursor:pointer;transition:var(--trans);
+}
+.toggle input:checked+.toggle-track{background:var(--blue)}
+.toggle-track::after{
+  content:'';position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;
+  background:#fff;transition:var(--trans);
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.toggle input:checked+.toggle-track::after{transform:translateX(20px)}
+
+/* Sound picker */
+.sound-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:8px;padding:14px 18px;border-bottom:1px solid var(--border2);
+}
+.sound-btn{
+  padding:9px 10px;border-radius:var(--radius);
+  background:var(--surface2);border:1.5px solid var(--border);
+  font-size:.78rem;font-weight:600;cursor:pointer;transition:var(--trans);
+  display:flex;align-items:center;gap:6px;color:var(--text2);
+}
+.sound-btn:hover{border-color:var(--blue);color:var(--blue)}
+.sound-btn.sel{background:rgba(59,130,246,.1);border-color:var(--blue);color:var(--blue)}
+.sound-test{
+  padding:7px 12px;border-radius:99px;
+  background:var(--grad-green);color:#fff;
+  font-size:.76rem;font-weight:600;border:none;cursor:pointer;transition:var(--trans);
+  display:flex;align-items:center;gap:5px;
+}
+.sound-test:hover{opacity:.9}
+
+/* Progress bar */
+.progress-bar-wrap{background:var(--surface2);border-radius:99px;height:8px;overflow:hidden}
+.progress-bar-fill{height:100%;border-radius:99px;background:var(--grad-card);transition:width .5s ease}
+
+/* ─── PWA INSTALL BANNER ──────────────────────────────────────────── */
+.install-banner{
+  margin:14px 14px 0;
+  background:var(--grad-card);
+  border-radius:var(--radius-lg);padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 4px 20px rgba(59,130,246,.3);
+  animation:fadeIn .5s ease;
+}
+.install-banner .ib-icon{font-size:1.8rem;flex-shrink:0}
+.install-banner .ib-text{flex:1;color:#fff}
+.install-banner .ib-title{font-weight:700;font-size:.9rem;margin-bottom:2px}
+.install-banner .ib-sub{font-size:.76rem;opacity:.8}
+.install-banner .ib-btn{
+  padding:8px 14px;border-radius:99px;background:rgba(255,255,255,.2);
+  color:#fff;font-weight:700;font-size:.78rem;border:1.5px solid rgba(255,255,255,.35);
+  cursor:pointer;transition:var(--trans);white-space:nowrap;flex-shrink:0;
+}
+.install-banner .ib-btn:hover{background:rgba(255,255,255,.3)}
+.install-banner .ib-close{
+  width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.85rem;cursor:pointer;flex-shrink:0;
+}
+
+/* ─── MISC ────────────────────────────────────────────────────────── */
+.hidden{display:none!important}
+.divider{height:1px;background:var(--border);margin:8px 0}
+.pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:99px;font-size:.72rem;font-weight:600;
+}
+.pill-blue{background:rgba(59,130,246,.1);color:var(--blue)}
+.pill-green{background:rgba(34,197,94,.1);color:var(--green)}
+.pill-red{background:rgba(239,68,68,.1);color:var(--red)}
+.pill-yellow{background:rgba(250,204,21,.1);color:#a16207}
+.pill-purple{background:rgba(168,85,247,.1);color:var(--purple)}
+
+/* Loading spinner */
+.spinner{
+  width:36px;height:36px;border-radius:50%;
+  border:3px solid var(--border);border-top-color:var(--blue);
+  animation:spin .8s linear infinite;margin:30px auto;display:block;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Offline banner */
+.offline-banner{
+  background:var(--orange);color:#fff;
+  padding:8px 16px;text-align:center;font-size:.82rem;font-weight:600;
+  display:none;
+}
+.offline-banner.show{display:block}
+
+/* Upload input hidden */
+#mp3Input,#importInput{display:none}
+
+/* Decorative */
+.hero-deco{
+  position:absolute;right:-30px;top:-30px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(59,130,246,.15),transparent 70%);
+  pointer-events:none;
+}
+
+/* ─── ANIMATIONS ──────────────────────────────────────────────────── */
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.slide-up{animation:slideUp .35s ease both}
+
+/* ─── RESPONSIVE TWEAKS ───────────────────────────────────────────── */
+@media(min-width:600px){
+  .header{padding:0 24px}
+  .hero{padding:28px 24px 32px}
+  .toolbar,.notes-toolbar{padding:10px 24px}
+  .main,.settings-main{padding:24px 24px 16px}
+}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ── OFFLINE BANNER ─────────────────────────────────────────────── -->
+<div class="offline-banner" id="offlineBanner">📶 You're offline — viewing cached data</div>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">⏱</div>
+    TimeXpert
+  </div>
+  <div class="header-right">
+    <button class="hdr-btn" id="notifBtn" title="Notifications">
+      🔔
+      <span class="notif-dot" id="notifDot"></span>
+    </button>
+    <button class="hdr-btn" id="themeBtn" title="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: SCHEDULE
+═══════════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-schedule">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-deco"></div>
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Good <span id="greet">day</span></div>
+      <div class="hero-title">Plan smarter,<br>achieve more ✦</div>
+      <div class="hero-date" id="heroDate"></div>
+      <div class="hero-chips">
+        <div class="chip"><span class="chip-dot" style="background:var(--green)"></span><span id="chip-today">0 today</span></div>
+        <div class="chip"><span class="chip-dot" style="background:var(--blue)"></span><span id="chip-upcoming">0 upcoming</span></div>
+        <div class="chip"><span class="chip-dot" style="background:var(--yellow)"></span><span id="chip-done">0 done</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL BANNER -->
+  <div id="installBanner" class="install-banner hidden">
+    <div class="ib-icon">📲</div>
+    <div class="ib-text">
+      <div class="ib-title">Install TimeXpert</div>
+      <div class="ib-sub">Add to Home Screen for offline access</div>
+    </div>
+    <button class="ib-btn" id="installBtn">Install</button>
+    <button class="ib-close" id="installClose">✕</button>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Search tasks…">
+    </div>
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="pending">Pending</button>
+    <button class="filter-btn" data-filter="done">Done</button>
+    <select class="sort-select" id="sortSelect">
+      <option value="date-asc">Date ↑</option>
+      <option value="date-desc">Date ↓</option>
+      <option value="priority">Priority</option>
+      <option value="title">A–Z</option>
+    </select>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card sc1"><div class="stat-num" id="sTotal">0</div><div class="stat-lbl">Total tasks</div></div>
+      <div class="stat-card sc2"><div class="stat-num" id="sDone">0</div><div class="stat-lbl">Completed</div></div>
+      <div class="stat-card sc3"><div class="stat-num" id="sMissed">0</div><div class="stat-lbl">Missed</div></div>
+      <div class="stat-card sc4"><div class="stat-num" id="sPending">0</div><div class="stat-lbl">Pending</div></div>
+    </div>
+
+    <!-- Progress bar -->
+    <div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:.78rem;font-weight:600;color:var(--text2)">Completion rate</span>
+        <span style="font-size:.78rem;font-weight:700;color:var(--blue)" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="today">📅 Today</button>
+      <button class="tab" data-tab="upcoming">🔜 Upcoming</button>
+      <button class="tab" data-tab="done">✅ Done</button>
+      <button class="tab" data-tab="all">📋 All</button>
+    </div>
+
+    <div class="section" id="panel-today"><div class="section-head"><div class="section-title">Today's Tasks <span class="sect-badge" id="badge-today">0</span></div></div><div class="card-grid" id="grid-today"></div></div>
+    <div class="section hidden" id="panel-upcoming"><div class="section-head"><div class="section-title">Upcoming <span class="sect-badge" id="badge-upcoming">0</span></div></div><div class="card-grid" id="grid-upcoming"></div></div>
+    <div class="section hidden" id="panel-done"><div class="section-head"><div class="section-title">Completed <span class="sect-badge" id="badge-done">0</span></div></div><div class="card-grid" id="grid-done"></div></div>
+    <div class="section hidden" id="panel-all"><div class="section-head"><div class="section-title">All Tasks <span class="sect-badge" id="badge-all">0</span></div></div><div class="card-grid" id="grid-all"></div></div>
+  </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: NOTES
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-notes">
+  <div class="notes-toolbar">
+    <div class="notes-search">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="noteSearch" placeholder="Search notes…">
+    </div>
+    <button class="btn btn-primary" id="newNoteBtn" style="flex:0;padding:9px 16px">+ Note</button>
+  </div>
+  <div class="notes-grid" id="notesGrid"></div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: SETTINGS
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="settings-main">
+
+    <!-- Notifications -->
+    <div class="set-section">
+      <div class="set-hdr">🔔 Notifications & Alarms</div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Browser Notifications</div><div class="set-desc">Show system alerts when reminders fire</div></div>
+        <div class="set-action">
+          <label class="toggle"><input type="checkbox" id="toggleNotif"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Alarm Sound</div><div class="set-desc">Play audio when a reminder triggers</div></div>
+        <div class="set-action">
+          <label class="toggle"><input type="checkbox" id="toggleSound" checked><span class="toggle-track"></span></label>
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Snooze Duration</div><div class="set-desc">How long to delay a dismissed alarm</div></div>
+        <div class="set-action">
+          <select class="fse" id="snoozeDur" style="width:100px">
+            <option value="5">5 min</option>
+            <option value="10" selected>10 min</option>
+            <option value="15">15 min</option>
+            <option value="20">20 min</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alarm Sound -->
+    <div class="set-section">
+      <div class="set-hdr">🎵 Alarm Sound</div>
+      <div class="sound-grid" id="soundGrid"></div>
+      <div class="set-row" style="gap:10px;flex-wrap:wrap">
+        <div class="set-info"><div class="set-label">Custom MP3</div><div class="set-desc">Upload your own alarm sound</div></div>
+        <div class="set-action" style="display:flex;gap:8px;align-items:center">
+          <button class="sound-test" id="testSoundBtn">▶ Test</button>
+          <button class="btn btn-ghost" style="padding:8px 14px;font-size:.78rem" onclick="document.getElementById('mp3Input').click()">📂 Upload MP3</button>
+          <input type="file" id="mp3Input" accept="audio/mpeg,audio/mp3,.mp3">
+        </div>
+      </div>
+      <div class="set-row" id="customMp3Row" style="display:none">
+        <div class="set-info"><div class="set-label" style="color:var(--green)">✅ Custom sound loaded</div><div class="set-desc" id="customMp3Name">—</div></div>
+        <button class="btn btn-danger" style="padding:6px 12px;font-size:.76rem" id="clearCustomMp3">Remove</button>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="set-section">
+      <div class="set-hdr">🎨 Appearance</div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Dark Mode</div><div class="set-desc">Switch between light and dark theme</div></div>
+        <div class="set-action">
+          <label class="toggle"><input type="checkbox" id="toggleDark"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backup & Restore -->
+    <div class="set-section">
+      <div class="set-hdr">💾 Backup & Restore</div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Export Data</div><div class="set-desc">Download all tasks and notes as JSON</div></div>
+        <div class="set-action"><button class="btn btn-ghost" id="exportBtn" style="padding:9px 16px;font-size:.82rem">📤 Export</button></div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Import Data</div><div class="set-desc">Restore from a previously exported JSON</div></div>
+        <div class="set-action">
+          <button class="btn btn-ghost" id="importBtn" style="padding:9px 16px;font-size:.82rem">📥 Import</button>
+          <input type="file" id="importInput" accept=".json,application/json">
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Clear All Data</div><div class="set-desc" style="color:var(--red)">Permanently delete everything</div></div>
+        <div class="set-action"><button class="btn btn-danger" id="clearDataBtn" style="padding:9px 14px;font-size:.82rem">🗑️ Clear</button></div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="set-section">
+      <div class="set-hdr">ℹ️ About</div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">TimeXpert</div><div class="set-desc">Version 2.0 · Smart Daily Scheduler PWA</div></div>
+        <div class="set-action"><span class="pill pill-blue">PWA</span></div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Cache Status</div><div class="set-desc" id="cacheStatus">Checking…</div></div>
+        <div class="set-action"><button class="btn btn-ghost" style="padding:7px 12px;font-size:.76rem" id="refreshCacheBtn">🔄 Refresh</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── BOTTOM NAV ──────────────────────────────────────────────────── -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-page="schedule">
+    <span class="nav-icon">📅</span>
+    Schedule
+    <span class="nav-badge hidden" id="navBadge">0</span>
+  </button>
+  <button class="nav-item" data-page="notes">
+    <span class="nav-icon">📝</span>
+    Notes
+  </button>
+  <button class="nav-item" data-page="settings">
+    <span class="nav-icon">⚙️</span>
+    Settings
+  </button>
+</nav>
+
+<!-- ── FAB ────────────────────────────────────────────────────────── -->
+<button class="fab" id="fabBtn" title="Add task / note">+</button>
+
+<!-- ── TOAST CONTAINER ────────────────────────────────────────────── -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     MODALS
+═══════════════════════════════════════════════════════════════ -->
+
+<!-- TASK FORM MODAL -->
+<div class="overlay" id="formOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr">
+      <span class="modal-title" id="formTitle">New Schedule</span>
+      <button class="modal-x" id="formClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="fg">
+        <label class="fl">Task title *</label>
+        <input class="fi" id="fTitle" type="text" placeholder="What do you need to do?">
+      </div>
+      <div class="fg">
+        <label class="fl">Description</label>
+        <textarea class="fta" id="fDesc" placeholder="Add notes or details…"></textarea>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Date *</label><input class="fi" id="fDate" type="date"></div>
+        <div class="fg"><label class="fl">Time *</label><input class="fi" id="fTime" type="time"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Status</label>
+        <select class="fse" id="fStatus">
+          <option value="pending">⏳ Pending</option>
+          <option value="done">✅ Completed</option>
+          <option value="missed">❌ Missed</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Priority</label>
+        <div class="pri-row">
+          <button class="pri-btn" data-pri="high">🔴 High</button>
+          <button class="pri-btn" data-pri="med">🟡 Medium</button>
+          <button class="pri-btn" data-pri="low">🟢 Low</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Reminder</label>
+        <div class="rem-pills">
+          <span class="rem-pill" data-min="5">5 min</span>
+          <span class="rem-pill" data-min="10">10 min</span>
+          <span class="rem-pill" data-min="20">20 min</span>
+          <span class="rem-pill" data-min="30">30 min</span>
+          <span class="rem-pill" data-min="60">1 hour</span>
+          <span class="rem-pill" data-min="custom">Custom</span>
+          <span class="rem-pill" data-min="none">None</span>
+        </div>
+        <div class="cust-rem" id="custRemRow">
+          <input type="number" id="custVal" min="1" placeholder="10" class="fi">
+          <select id="custUnit" class="fse">
+            <option value="min">Minutes</option>
+            <option value="hour">Hours</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Category</label>
+        <select class="fse" id="fCat">
+          <option value="work">💼 Work</option>
+          <option value="personal">🏠 Personal</option>
+          <option value="health">🏃 Health</option>
+          <option value="study">📚 Study</option>
+          <option value="finance">💰 Finance</option>
+          <option value="other">📌 Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="formCancel">Cancel</button>
+      <button class="btn btn-primary" id="formSave">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK DETAIL MODAL -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="detail-banner" id="detailBanner"></div>
+    <div class="modal-hdr">
+      <span class="modal-title" id="detailTitle"></span>
+      <button class="modal-x" id="detailClose">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot" id="detailFoot" style="flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<!-- NOTE EDITOR MODAL -->
+<div class="overlay" id="noteOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-hdr">
+      <span class="modal-title" id="noteModalTitle">New Note</span>
+      <button class="modal-x" id="noteClose">✕</button>
+    </div>
+    <div style="padding:14px 20px 0;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);padding-bottom:12px">
+      <span style="font-size:.74rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">Color</span>
+      <div class="note-color-row" id="noteColorRow" style="margin:0"></div>
+    </div>
+    <div class="note-editor-body">
+      <input type="hidden" id="noteEditId">
+      <input class="note-title-input" id="noteTitleInput" placeholder="Note title…">
+      <textarea class="note-content-input" id="noteContentInput" placeholder="Start writing…"></textarea>
+    </div>
+    <div class="auto-save-ind"><div class="auto-save-dot" id="autoSaveDot"></div><span id="autoSaveLabel">Auto-save on</span></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="noteCancel">Discard</button>
+      <button class="btn btn-primary" id="noteSave">💾 Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <span class="confirm-icon" id="confirmIcon">⚠️</span>
+    <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+    <div class="confirm-msg" id="confirmMsg">This action cannot be undone.</div>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" id="confirmCancel" style="flex:1;justify-content:center">Cancel</button>
+      <button class="btn btn-danger" id="confirmOk" style="flex:1;justify-content:center">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALARM POPUP -->
+<div class="alarm-overlay" id="alarmOverlay">
+  <div class="alarm-card">
+    <span class="alarm-bell">🔔</span>
+    <div class="alarm-title" id="alarmTitle">Task Reminder</div>
+    <div class="alarm-sub" id="alarmSub"></div>
+    <div class="alarm-btns">
+      <button class="alarm-dismiss" id="alarmDismiss">✅ Got it!</button>
+      <button class="alarm-snooze" id="alarmSnooze">💤 Snooze</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   TIMEXPERT 2.0 — Core Engine
+════════════════════════════════════════════════════════════════════ */
+
+/* ── CONSTANTS ──────────────────────────────────────────────────── */
+const SK_TASKS  = 'tx2_tasks';
+const SK_NOTES  = 'tx2_notes';
+const SK_FIRED  = 'tx2_fired';
+const SK_PREFS  = 'tx2_prefs';
+const SK_MP3    = 'tx2_mp3_b64';
+const SK_MP3NM  = 'tx2_mp3_name';
+const SK_THEME  = 'tx2_theme';
+
+/* ── STATE ──────────────────────────────────────────────────────── */
+let tasks        = [];
+let notes        = [];
+let editId       = null;
+let currentPage  = 'schedule';
+let currentTab   = 'today';
+let currentFilter= 'all';
+let searchQ      = '';
+let sortMode     = 'date-asc';
+let selPri       = 'med';
+let selRem       = '10';
+let custRemMin   = 10;
+let shownRem     = new Set();
+let prefs        = {};
+let selSound     = 'bell';
+let audioCtx     = null;
+let noteEditId   = null;
+let noteSelColor = '#3b82f6';
+let noteAutoTimer = null;
+let currentAlarmTask = null;
+let snoozedAlarms = {};
+let deferredInstall = null;
+
+/* ── NOTE COLORS ─────────────────────────────────────────────────── */
+const NOTE_COLORS = ['#3b82f6','#22c55e','#a855f7','#f97316','#ef4444','#38bdf8','#facc15','#ec4899'];
+
+/* ── SOUNDS ──────────────────────────────────────────────────────── */
+const SOUNDS = {
+  bell:    {label:'🔔 Bell',    fn: () => synthBell()},
+  chime:   {label:'🎵 Chime',   fn: () => synthChime()},
+  alert:   {label:'🚨 Alert',   fn: () => synthAlert()},
+  ping:    {label:'🏓 Ping',    fn: () => synthPing()},
+  digital: {label:'💻 Digital', fn: () => synthDigital()},
+  gentle:  {label:'🌊 Gentle',  fn: () => synthGentle()},
+};
+
+/* ── DOM REFS ─────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const formOverlay   = $('formOverlay');
+const detailOverlay = $('detailOverlay');
+const noteOverlay   = $('noteOverlay');
+const confirmOverlay= $('confirmOverlay');
+const alarmOverlay  = $('alarmOverlay');
+
+/* ══ INIT ═════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  loadPrefs();
+  loadTheme();
+  loadTasks();
+  loadNotes();
+  loadFired();
+  setHeroDate();
+  buildSoundGrid();
+  buildNoteColorRow();
+  renderAll();
+  renderNotes();
+  attachEvents();
+  startReminderLoop();
+  checkNetStatus();
+  registerSW();
+  checkPWAInstall();
+  updateCacheStatus();
+  requestNotifPermission();
+  migrateOldData();
+});
+
+/* ══ MIGRATION (from v1) ════════════════════════════════════════════ */
+function migrateOldData(){
+  const old = localStorage.getItem('timexpert_tasks');
+  if(old && !localStorage.getItem(SK_TASKS)){
+    try{
+      tasks = JSON.parse(old);
+      saveTasks();
+      toast('Migrated your existing tasks ✓','success');
+    }catch(e){}
+  }
+}
+
+/* ══ PREFS ════════════════════════════════════════════════════════════ */
+function loadPrefs(){
+  try{ prefs = JSON.parse(localStorage.getItem(SK_PREFS)) || {}; }
+  catch{ prefs = {}; }
+  selSound = prefs.sound || 'bell';
+  $('toggleSound').checked = prefs.soundEnabled !== false;
+  $('snoozeDur').value = prefs.snoozeDur || '10';
+  if(prefs.sound) selSound = prefs.sound;
+}
+function savePrefs(){
+  prefs.sound = selSound;
+  prefs.soundEnabled = $('toggleSound').checked;
+  prefs.snoozeDur = $('snoozeDur').value;
+  localStorage.setItem(SK_PREFS, JSON.stringify(prefs));
+}
+
+/* ══ THEME ════════════════════════════════════════════════════════════ */
+function loadTheme(){
+  const t = localStorage.getItem(SK_THEME) || 'light';
+  applyTheme(t, false);
+}
+function applyTheme(t, save=true){
+  document.body.dataset.theme = t;
+  $('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  $('toggleDark').checked = t === 'dark';
+  $('themeColorMeta').content = t === 'dark' ? '#060b18' : '#0f172a';
+  if(save) localStorage.setItem(SK_THEME, t);
+}
+$('themeBtn').onclick = () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark');
+$('toggleDark').onchange = e => applyTheme(e.target.checked ? 'dark' : 'light');
+
+/* ══ DATE HELPERS ═════════════════════════════════════════════════════ */
+function todayStr(){
+  const n = new Date();
+  return `${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}`;
+}
+function pad(n){ return String(n).padStart(2,'0'); }
+function setHeroDate(){
+  const now = new Date();
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  $('heroDate').textContent = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  const h = now.getHours();
+  $('greet').textContent = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+}
+function fmtDate(d){
+  if(!d) return '';
+  const [y,m,dd] = d.split('-');
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${MONTHS[+m-1]} ${+dd}, ${y}`;
+}
+function nowTimeStr(){
+  const n = new Date();
+  return `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+function timeAgo(ts){
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff/60000);
+  if(m < 1) return 'Just now';
+  if(m < 60) return `${m}m ago`;
+  const h = Math.floor(m/60);
+  if(h < 24) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+
+/* ══ STORAGE ══════════════════════════════════════════════════════════ */
+function loadTasks(){ try{ tasks = JSON.parse(localStorage.getItem(SK_TASKS)) || []; }catch{ tasks = []; } }
+function saveTasks(){ localStorage.setItem(SK_TASKS, JSON.stringify(tasks)); }
+function loadNotes(){ try{ notes = JSON.parse(localStorage.getItem(SK_NOTES)) || []; }catch{ notes = []; } }
+function saveNotes(){ localStorage.setItem(SK_NOTES, JSON.stringify(notes)); }
+function loadFired(){ try{ shownRem = new Set(JSON.parse(localStorage.getItem(SK_FIRED)) || []); }catch{ shownRem = new Set(); } }
+function saveFired(){ localStorage.setItem(SK_FIRED, JSON.stringify([...shownRem])); }
+
+/* ══ RENDER ENGINE ════════════════════════════════════════════════════ */
+function renderAll(){
+  updateStats();
+  updateHeroChips();
+  renderTab(currentTab);
+  updateNavBadge();
+}
+
+function filterAndSort(arr){
+  let res = [...arr];
+  if(currentFilter === 'pending') res = res.filter(t => t.status !== 'done');
+  if(currentFilter === 'done')    res = res.filter(t => t.status === 'done');
+  if(searchQ){
+    const q = searchQ.toLowerCase();
+    res = res.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      (t.desc||'').toLowerCase().includes(q) ||
+      (t.category||'').toLowerCase().includes(q)
+    );
+  }
+  if(sortMode === 'date-asc')  res.sort((a,b) => dateMs(a) - dateMs(b));
+  if(sortMode === 'date-desc') res.sort((a,b) => dateMs(b) - dateMs(a));
+  if(sortMode === 'priority')  res.sort((a,b) => priW(a.priority) - priW(b.priority));
+  if(sortMode === 'title')     res.sort((a,b) => a.title.localeCompare(b.title));
+  return res;
+}
+function dateMs(t){ return new Date(`${t.date}T${t.time||'00:00'}`).getTime(); }
+function priW(p){ return p==='high'?0:p==='med'?1:2; }
+
+function getTodayTasks(){   return tasks.filter(t => t.date === todayStr()); }
+function getUpcoming(){     return tasks.filter(t => t.date > todayStr() && t.status !== 'done'); }
+function getDone(){         return tasks.filter(t => t.status === 'done'); }
+
+function renderTab(tab){
+  ['today','upcoming','done','all'].forEach(p => {
+    $(`panel-${p}`).classList.toggle('hidden', p !== tab);
+  });
+  const sets = {
+    today:    filterAndSort(getTodayTasks()),
+    upcoming: filterAndSort(getUpcoming()),
+    done:     filterAndSort(getDone()),
+    all:      filterAndSort(tasks),
+  };
+  Object.entries(sets).forEach(([k,arr]) => {
+    $(`badge-${k}`).textContent = arr.length;
+    renderGrid($(`grid-${k}`), arr);
+  });
+}
+
+function renderGrid(container, arr){
+  if(!arr.length){
+    container.innerHTML = `<div class="empty"><span class="empty-illo">🗒️</span><div class="empty-h">Nothing here yet</div><div class="empty-p">Tap <strong>+</strong> to add a task</div></div>`;
+    return;
+  }
+  container.innerHTML = arr.map(cardHTML).join('');
+  container.querySelectorAll('.task-card').forEach(card => {
+    const id = card.dataset.id;
+    card.addEventListener('click', e => {
+      if(e.target.closest('.chk') || e.target.closest('.iBtn')) return;
+      openDetail(id);
+    });
+    card.querySelector('.chk')?.addEventListener('click', () => toggleDone(id));
+    card.querySelector('.eBtn')?.addEventListener('click', e => { e.stopPropagation(); openForm(id); });
+    card.querySelector('.dBtn')?.addEventListener('click', e => { e.stopPropagation(); confirmDelete('task', id); });
+    card.querySelector('.waBtn')?.addEventListener('click', e => { e.stopPropagation(); waShareTask(id); });
+  });
+}
+
+const CAT_ICONS = {work:'💼',personal:'🏠',health:'🏃',study:'📚',finance:'💰',other:'📌'};
+const STATUS_TXT = {pending:'⏳ Pending',done:'✅ Done',missed:'❌ Missed'};
+
+function cardHTML(t){
+  const done = t.status === 'done';
+  const scls = done ? 'mc-done' : t.status === 'missed' ? 'mc-miss' : 'mc-pend';
+  const rl = remLabel(t.reminder, t.custRemMin);
+  return `
+  <div class="task-card pri-${t.priority} ${done?'st-done':''}" data-id="${t.id}">
+    <button class="chk ${done?'on':''}">${done?'✓':''}</button>
+    <div class="task-body">
+      <div class="task-title">${esc(t.title)}</div>
+      ${t.desc?`<div class="task-desc">${esc(t.desc)}</div>`:''}
+      <div class="task-meta">
+        <span class="mc mc-time">🕐 ${t.time}</span>
+        <span class="mc mc-date">📅 ${fmtDate(t.date)}</span>
+        ${rl?`<span class="mc mc-rem">🔔 ${rl}</span>`:''}
+        <span class="mc ${scls}">${STATUS_TXT[t.status]}</span>
+        ${t.category?`<span class="mc mc-cat">${CAT_ICONS[t.category]||'📌'} ${cap(t.category)}</span>`:''}
+      </div>
+    </div>
+    <div class="task-acts">
+      <button class="iBtn eBtn" title="Edit">✏️</button>
+      <button class="iBtn waBtn" title="Share on WhatsApp">🟢</button>
+      <button class="iBtn dBtn" title="Delete">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function updateStats(){
+  const done = tasks.filter(t=>t.status==='done').length;
+  const total = tasks.length;
+  $('sTotal').textContent   = total;
+  $('sDone').textContent    = done;
+  $('sMissed').textContent  = tasks.filter(t=>t.status==='missed').length;
+  $('sPending').textContent = tasks.filter(t=>t.status==='pending').length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  $('progressPct').textContent = pct + '%';
+  $('progressBar').style.width = pct + '%';
+}
+function updateHeroChips(){
+  $('chip-today').textContent    = `${getTodayTasks().length} today`;
+  $('chip-upcoming').textContent = `${getUpcoming().length} upcoming`;
+  $('chip-done').textContent     = `${getDone().length} done`;
+}
+function updateNavBadge(){
+  const due = getTodayTasks().filter(t=>t.status==='pending').length;
+  const b = $('navBadge');
+  b.textContent = due;
+  b.classList.toggle('hidden', due === 0);
+}
+
+/* ══ TASK FORM ════════════════════════════════════════════════════════ */
+function openForm(id=null){
+  editId = id;
+  const t = id ? tasks.find(x=>x.id===id) : null;
+  $('formTitle').textContent = t ? 'Edit Schedule' : 'New Schedule';
+  $('fTitle').value    = t?.title || '';
+  $('fDesc').value     = t?.desc  || '';
+  $('fDate').value     = t?.date  || todayStr();
+  $('fTime').value     = t?.time  || nowTimeStr();
+  $('fStatus').value   = t?.status || 'pending';
+  $('fCat').value      = t?.category || 'work';
+  selPri = t?.priority || 'med';
+  selRem = t?.reminder || '10';
+  custRemMin = t?.custRemMin || 10;
+  $('custVal').value = custRemMin;
+  renderPriBtns();
+  renderRemPills();
+  toggleCustRem();
+  formOverlay.classList.add('open');
+  setTimeout(()=>$('fTitle').focus(),350);
+}
+function closeForm(){ formOverlay.classList.remove('open'); editId=null; }
+
+function renderPriBtns(){
+  document.querySelectorAll('.pri-btn').forEach(b => {
+    const p = b.dataset.pri;
+    b.className = 'pri-btn' + (selPri===p?` pri-${p}`:'');
+  });
+}
+function renderRemPills(){
+  document.querySelectorAll('.rem-pill').forEach(p => p.classList.toggle('sel', p.dataset.min===selRem));
+}
+function toggleCustRem(){
+  $('custRemRow').classList.toggle('show', selRem==='custom');
+}
+function remLabel(r, cMin){
+  if(!r||r==='none') return '';
+  const map={'5':'5 min','10':'10 min','20':'20 min','30':'30 min','60':'1 hr'};
+  if(map[r]) return map[r]+' before';
+  if(r==='custom') return `${cMin} min before`;
+  return '';
+}
+
+function saveTask(){
+  const title = $('fTitle').value.trim();
+  const date  = $('fDate').value;
+  const time  = $('fTime').value;
+  if(!title){ toast('Title is required','error'); return; }
+  if(!date)  { toast('Date is required','error'); return; }
+  if(!time)  { toast('Time is required','error'); return; }
+
+  const cMinRaw = parseInt($('custVal').value) || 10;
+  const cMin = $('custUnit').value === 'hour' ? cMinRaw * 60 : cMinRaw;
+
+  const payload = {
+    id: editId || uid(),
+    title, desc: $('fDesc').value.trim(),
+    date, time,
+    status: $('fStatus').value,
+    priority: selPri,
+    reminder: selRem,
+    custRemMin: cMin,
+    category: $('fCat').value,
+    createdAt: editId ? (tasks.find(t=>t.id===editId)?.createdAt||Date.now()) : Date.now()
+  };
+
+  if(editId){
+    const idx = tasks.findIndex(t=>t.id===editId);
+    if(idx>-1) tasks[idx] = payload;
+    toast('Schedule updated ✓','success');
+  } else {
+    tasks.unshift(payload);
+    toast('Schedule added ✓','success');
+    scheduleNotification(payload);
+  }
+  saveTasks();
+  closeForm();
+  renderAll();
+}
+
+/* ══ TASK DETAIL ══════════════════════════════════════════════════════ */
+function openDetail(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  $('detailTitle').textContent = t.title;
+  const colors = {high:'var(--red)',med:'var(--yellow)',low:'var(--green)'};
+  $('detailBanner').style.background = colors[t.priority]||'var(--blue)';
+  const rl = remLabel(t.reminder, t.custRemMin);
+  $('detailBody').innerHTML = `
+    <div class="det-sec">
+      <div class="det-lbl">Description</div>
+      <div class="det-val">${t.desc?esc(t.desc):'<span style="color:var(--text3)">No description</span>'}</div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div><div class="det-lbl">Date</div><div class="det-val">📅 ${fmtDate(t.date)}</div></div>
+      <div><div class="det-lbl">Time</div><div class="det-val">🕐 ${t.time}</div></div>
+      <div><div class="det-lbl">Status</div><div class="det-val">${STATUS_TXT[t.status]}</div></div>
+      <div><div class="det-lbl">Priority</div><div class="det-val">${t.priority==='high'?'🔴':t.priority==='med'?'🟡':'🟢'} ${cap(t.priority)}</div></div>
+      <div><div class="det-lbl">Category</div><div class="det-val">${CAT_ICONS[t.category]||'📌'} ${cap(t.category)}</div></div>
+      <div><div class="det-lbl">Reminder</div><div class="det-val">${rl||'—'}</div></div>
+    </div>`;
+  $('detailFoot').innerHTML = `
+    <button class="btn btn-danger" id="dDel">🗑️ Delete</button>
+    <button class="btn btn-ghost" id="dEdit">✏️ Edit</button>
+    <button class="btn btn-wa" id="dWA">🟢 Share</button>
+    <button class="btn btn-primary" id="dToggle">${t.status==='done'?'↩️ Reopen':'✅ Complete'}</button>`;
+  $('dDel').onclick   = () => { closeDetail(); confirmDelete('task',id); };
+  $('dEdit').onclick  = () => { closeDetail(); openForm(id); };
+  $('dWA').onclick    = () => waShareTask(id);
+  $('dToggle').onclick= () => { toggleDone(id); closeDetail(); };
+  detailOverlay.classList.add('open');
+}
+function closeDetail(){ detailOverlay.classList.remove('open'); }
+
+/* ══ TASK OPS ═════════════════════════════════════════════════════════ */
+function toggleDone(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.status = t.status==='done' ? 'pending' : 'done';
+  saveTasks(); renderAll();
+  toast(t.status==='done'?'Marked as done ✓':'Reopened','info');
+}
+
+/* ══ CONFIRM DIALOG ═══════════════════════════════════════════════════ */
+function confirmDelete(type, id){
+  $('confirmIcon').textContent  = '🗑️';
+  $('confirmTitle').textContent = 'Delete this ' + type + '?';
+  $('confirmMsg').textContent   = 'This action cannot be undone.';
+  $('confirmOk').className = 'btn btn-danger';
+  $('confirmOk').style.flex = '1';
+  $('confirmOk').style.justifyContent = 'center';
+  $('confirmOk').textContent = 'Yes, Delete';
+  confirmOverlay.classList.add('open');
+  $('confirmOk').onclick = () => {
+    confirmOverlay.classList.remove('open');
+    if(type==='task') doDeleteTask(id);
+    else doDeleteNote(id);
+  };
+  $('confirmCancel').onclick = () => confirmOverlay.classList.remove('open');
+}
+function confirm2(icon, title, msg, okLabel, okCb, okClass='btn-danger'){
+  $('confirmIcon').textContent  = icon;
+  $('confirmTitle').textContent = title;
+  $('confirmMsg').textContent   = msg;
+  $('confirmOk').className = `btn ${okClass}`;
+  $('confirmOk').style.flex = '1';
+  $('confirmOk').style.justifyContent = 'center';
+  $('confirmOk').textContent = okLabel;
+  confirmOverlay.classList.add('open');
+  $('confirmOk').onclick = () => { confirmOverlay.classList.remove('open'); okCb(); };
+  $('confirmCancel').onclick = () => confirmOverlay.classList.remove('open');
+}
+function doDeleteTask(id){
+  tasks = tasks.filter(t=>t.id!==id);
+  saveTasks(); renderAll();
+  toast('Task deleted','info');
+}
+
+/* ══ WHATSAPP SHARE ═══════════════════════════════════════════════════ */
+function waShareTask(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  const rl = remLabel(t.reminder, t.custRemMin);
+  let txt = `📅 *TimeXpert Schedule*\n\n`;
+  txt += `*${t.title}*\n`;
+  if(t.desc) txt += `📝 ${t.desc}\n`;
+  txt += `\n🗓 Date: ${fmtDate(t.date)}`;
+  txt += `\n🕐 Time: ${t.time}`;
+  txt += `\n${t.priority==='high'?'🔴':t.priority==='med'?'🟡':'🟢'} Priority: ${cap(t.priority)}`;
+  txt += `\n${STATUS_TXT[t.status]}`;
+  if(rl) txt += `\n🔔 Reminder: ${rl}`;
+  txt += `\n\n_Shared from TimeXpert_`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+function waShareNote(id){
+  const n = notes.find(x=>x.id===id);
+  if(!n) return;
+  let txt = `📝 *${n.title||'Note'}*\n\n${n.content||''}\n\n_Shared from TimeXpert_`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+
+/* ══ NOTES ════════════════════════════════════════════════════════════ */
+function buildNoteColorRow(){
+  const row = $('noteColorRow');
+  row.innerHTML = NOTE_COLORS.map(c => `
+    <button class="nc-btn ${c===noteSelColor?'sel':''}" data-c="${c}"
+      style="background:${c}" title="${c}"></button>
+  `).join('');
+  row.querySelectorAll('.nc-btn').forEach(b => {
+    b.onclick = () => {
+      noteSelColor = b.dataset.c;
+      row.querySelectorAll('.nc-btn').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+    };
+  });
+}
+
+function openNoteEditor(id=null){
+  noteEditId = id;
+  const n = id ? notes.find(x=>x.id===id) : null;
+  $('noteModalTitle').textContent = n ? 'Edit Note' : 'New Note';
+  $('noteTitleInput').value   = n?.title   || '';
+  $('noteContentInput').value = n?.content || '';
+  noteSelColor = n?.color || '#3b82f6';
+  buildNoteColorRow();
+  $('autoSaveDot').classList.remove('saving');
+  $('autoSaveLabel').textContent = 'Auto-save on';
+  noteOverlay.classList.add('open');
+  setTimeout(()=>$('noteTitleInput').focus(),350);
+  startNoteAutoSave();
+}
+function closeNoteEditor(){
+  noteOverlay.classList.remove('open');
+  clearInterval(noteAutoTimer);
+  noteEditId = null;
+}
+function startNoteAutoSave(){
+  clearInterval(noteAutoTimer);
+  noteAutoTimer = setInterval(() => {
+    if(!noteOverlay.classList.contains('open')) return;
+    const title   = $('noteTitleInput').value.trim();
+    const content = $('noteContentInput').value;
+    if(!title && !content) return;
+    $('autoSaveDot').classList.add('saving');
+    $('autoSaveLabel').textContent = 'Saving…';
+    saveNotePayload(false);
+    setTimeout(()=>{
+      $('autoSaveDot').classList.remove('saving');
+      $('autoSaveLabel').textContent = 'Saved ✓';
+    },600);
+  }, 4000);
+}
+function saveNotePayload(close=true){
+  const title   = $('noteTitleInput').value.trim();
+  const content = $('noteContentInput').value;
+  if(!title && !content){ if(close){ toast('Note is empty','error'); } return; }
+
+  const payload = {
+    id: noteEditId || uid(),
+    title: title || 'Untitled',
+    content,
+    color: noteSelColor,
+    updatedAt: Date.now(),
+    createdAt: noteEditId ? (notes.find(n=>n.id===noteEditId)?.createdAt||Date.now()) : Date.now()
+  };
+  if(noteEditId){
+    const idx = notes.findIndex(n=>n.id===noteEditId);
+    if(idx>-1) notes[idx] = payload;
+    else notes.unshift(payload);
+    noteEditId = payload.id;
+  } else {
+    notes.unshift(payload);
+    noteEditId = payload.id;
+  }
+  saveNotes();
+  if(close){ closeNoteEditor(); toast('Note saved ✓','success'); renderNotes(); }
+  else renderNotes();
+}
+function doDeleteNote(id){
+  notes = notes.filter(n=>n.id!==id);
+  saveNotes(); renderNotes();
+  toast('Note deleted','info');
+}
+
+function renderNotes(){
+  const q = ($('noteSearch')?.value||'').toLowerCase();
+  let arr = [...notes];
+  if(q) arr = arr.filter(n =>
+    (n.title||'').toLowerCase().includes(q) ||
+    (n.content||'').toLowerCase().includes(q)
+  );
+  const grid = $('notesGrid');
+  if(!arr.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span class="empty-illo">📝</span><div class="empty-h">No notes yet</div><div class="empty-p">Tap <strong>+ Note</strong> to create one</div></div>`;
+    return;
+  }
+  grid.innerHTML = arr.map(n => `
+    <div class="note-card" data-id="${n.id}" style="padding-top:20px">
+      <div class="note-accent" style="background:${n.color||'#3b82f6'}"></div>
+      <div class="note-title">${esc(n.title||'Untitled')}</div>
+      <div class="note-body">${esc(n.content||'')}</div>
+      <div class="note-footer">
+        <div class="note-date">${timeAgo(n.updatedAt||n.createdAt)}</div>
+        <div class="note-acts">
+          <button class="note-act nwa" title="Share on WhatsApp">🟢</button>
+          <button class="note-act ne" title="Edit">✏️</button>
+          <button class="note-act nd" title="Delete">🗑️</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.note-card').forEach(card => {
+    const id = card.dataset.id;
+    card.addEventListener('click', e => {
+      if(e.target.closest('.note-act')) return;
+      openNoteEditor(id);
+    });
+    card.querySelector('.ne')?.addEventListener('click',  e => { e.stopPropagation(); openNoteEditor(id); });
+    card.querySelector('.nd')?.addEventListener('click',  e => { e.stopPropagation(); confirmDelete('note',id); });
+    card.querySelector('.nwa')?.addEventListener('click', e => { e.stopPropagation(); waShareNote(id); });
+  });
+}
+
+/* ══ NOTIFICATIONS ════════════════════════════════════════════════════ */
+async function requestNotifPermission(){
+  if(!('Notification' in window)) return;
+  const perm = Notification.permission;
+  if(perm === 'granted'){
+    $('toggleNotif').checked = true;
+    prefs.notifEnabled = true;
+  } else if(perm === 'default'){
+    const res = await Notification.requestPermission();
+    $('toggleNotif').checked = res === 'granted';
+    prefs.notifEnabled = res === 'granted';
+  } else {
+    $('toggleNotif').checked = false;
+    prefs.notifEnabled = false;
+  }
+  savePrefs();
+}
+$('toggleNotif').onchange = async e => {
+  if(e.target.checked){
+    const res = await Notification.requestPermission();
+    $('toggleNotif').checked = res === 'granted';
+    prefs.notifEnabled = res === 'granted';
+    if(res !== 'granted') toast('Notification permission denied','error');
+    else toast('Notifications enabled ✓','success');
+  } else {
+    prefs.notifEnabled = false;
+  }
+  savePrefs();
+};
+
+function scheduleNotification(task){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  if(!task.reminder || task.reminder === 'none') return;
+  const remMins = task.reminder === 'custom' ? (task.custRemMin||10) : parseInt(task.reminder);
+  const fireAt = new Date(`${task.date}T${task.time}`).getTime() - remMins * 60000;
+  const delay = fireAt - Date.now();
+  if(delay < 0) return;
+  setTimeout(() => {
+    if(Notification.permission === 'granted'){
+      new Notification('⏱ TimeXpert Reminder', {
+        body: `${task.title} starts in ${remMins >= 60 ? Math.round(remMins/60)+'h' : remMins+'m'}`,
+        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y=".9em" font-size="64">⏱</text></svg>',
+        tag: task.id,
+      });
+    }
+  }, delay);
+}
+
+/* ══ REMINDER LOOP ════════════════════════════════════════════════════ */
+function startReminderLoop(){
+  checkReminders();
+  setInterval(checkReminders, 30000);
+}
+function checkReminders(){
+  const now = Date.now();
+  tasks.forEach(t => {
+    if(t.status==='done' || !t.reminder || t.reminder==='none') return;
+    const taskMs = new Date(`${t.date}T${t.time}`).getTime();
+    const mins = t.reminder==='custom' ? (t.custRemMin||10) : parseInt(t.reminder);
+    const remMs = taskMs - mins * 60000;
+    const key = `${t.id}_${mins}`;
+    const snoozedUntil = snoozedAlarms[key];
+    if(snoozedUntil && now < snoozedUntil) return;
+
+    if(now >= remMs && now < remMs + 60000 && !shownRem.has(key)){
+      shownRem.add(key);
+      saveFired();
+      showAlarm(t, mins);
+    }
+  });
+
+  // Notif badge for tasks due in next hour
+  const dueSoon = tasks.filter(t => {
+    const ms = new Date(`${t.date}T${t.time}`).getTime();
+    return ms >= now && ms <= now + 3600000 && t.status !== 'done';
+  });
+  $('notifDot').style.display = dueSoon.length ? 'block' : 'none';
+}
+
+function showAlarm(t, mins){
+  currentAlarmTask = t;
+  $('alarmTitle').textContent = t.title;
+  $('alarmSub').textContent = `Starting in ${mins >= 60 ? Math.round(mins/60)+' hour(s)' : mins+' minute(s)'} · ${t.time}`;
+  alarmOverlay.classList.add('open');
+  if(prefs.soundEnabled !== false) playSound();
+}
+
+$('alarmDismiss').onclick = () => {
+  alarmOverlay.classList.remove('open');
+  currentAlarmTask = null;
+  stopSound();
+};
+$('alarmSnooze').onclick = () => {
+  alarmOverlay.classList.remove('open');
+  if(currentAlarmTask){
+    const mins = parseInt($('snoozeDur').value) || 10;
+    const t = currentAlarmTask;
+    const remMins = t.reminder==='custom'?(t.custRemMin||10):parseInt(t.reminder);
+    const key = `${t.id}_${remMins}`;
+    snoozedAlarms[key] = Date.now() + mins * 60000;
+    toast(`Snoozed for ${mins} minutes 💤`,'info');
+    // re-fire after snooze
+    setTimeout(() => showAlarm(t, mins), mins * 60000);
+  }
+  currentAlarmTask = null;
+  stopSound();
+};
+
+/* ══ AUDIO ENGINE ═════════════════════════════════════════════════════ */
+let activeOsc = [];
+let customAudioBuffer = null;
+let customAudioSource = null;
+
+function getCtx(){
+  if(!audioCtx || audioCtx.state === 'closed'){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function stopSound(){
+  activeOsc.forEach(o => { try{ o.stop(); }catch(e){} });
+  activeOsc = [];
+  if(customAudioSource){ try{ customAudioSource.stop(); }catch(e){} customAudioSource=null; }
+}
+
+function playSound(){
+  stopSound();
+  // Try custom MP3 first
+  const b64 = localStorage.getItem(SK_MP3);
+  if(b64 && selSound === 'custom'){
+    playCustomMP3(b64);
+    return;
+  }
+  const fn = SOUNDS[selSound]?.fn || synthBell;
+  fn();
+}
+
+function playCustomMP3(b64){
+  try{
+    const ctx = getCtx();
+    const binary = atob(b64.split(',')[1]);
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i] = binary.charCodeAt(i);
+    ctx.decodeAudioData(bytes.buffer, buf => {
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start();
+      customAudioSource = src;
+    });
+  }catch(e){ synthBell(); }
+}
+
+function note(ctx, freq, start, dur, gain=0.4, type='sine'){
+  const osc = ctx.createOscillator();
+  const g   = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, start);
+  g.gain.setValueAtTime(gain, start);
+  g.gain.exponentialRampToValueAtTime(0.001, start+dur);
+  osc.connect(g);
+  g.connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start+dur);
+  activeOsc.push(osc);
+}
+
+function synthBell(){
+  const ctx = getCtx(); const t = ctx.currentTime;
+  [[523,.8],[659,.6],[784,.5],[1047,.9]].forEach(([f,d],i) => note(ctx,f,t+i*.25,d,.35,'sine'));
+}
+function synthChime(){
+  const ctx = getCtx(); const t = ctx.currentTime;
+  [[880,.5],[1108,.5],[1320,.6],[1760,.8]].forEach(([f,d],i) => note(ctx,f,t+i*.2,d,.3,'triangle'));
+}
+function synthAlert(){
+  const ctx = getCtx(); const t = ctx.currentTime;
+  for(let i=0;i<4;i++){
+    note(ctx,880,t+i*.22,.15,.5,'square');
+    note(ctx,660,t+i*.22+.11,.1,.4,'square');
+  }
+}
+function synthPing(){
+  const ctx = getCtx(); const t = ctx.currentTime;
+  note(ctx,1320,t,.6,.45,'sine');
+  note(ctx,1760,t+.05,.4,.25,'sine');
+}
+function synthDigital(){
+  const ctx = getCtx(); const t = ctx.currentTime;
+  for(let i=0;i<6;i++) note(ctx,i%2===0?440:660,t+i*.12,.1,.4,'square');
+}
+function synthGentle(){
+  const ctx = getCtx(); const t = ctx.currentTime;
+  [[392,.8],[440,.8],[494,1.2]].forEach(([f,d],i) => note(ctx,f,t+i*.3,d,.22,'sine'));
+}
+
+/* ══ SOUND SETTINGS ═══════════════════════════════════════════════════ */
+function buildSoundGrid(){
+  const grid = $('soundGrid');
+  grid.innerHTML = Object.entries(SOUNDS).map(([k,s]) => `
+    <button class="sound-btn ${selSound===k?'sel':''}" data-s="${k}">${s.label}</button>
+  `).join('');
+  // Custom MP3 option
+  grid.innerHTML += `<button class="sound-btn ${selSound==='custom'?'sel':''}" data-s="custom">🎵 Custom MP3</button>`;
+
+  grid.querySelectorAll('.sound-btn').forEach(b => {
+    b.onclick = () => {
+      selSound = b.dataset.s;
+      grid.querySelectorAll('.sound-btn').forEach(x=>x.classList.remove('sel'));
+      b.classList.add('sel');
+      savePrefs();
+    };
+  });
+  // Check if custom mp3 loaded
+  checkCustomMp3Display();
+}
+
+$('testSoundBtn').onclick = () => {
+  try{ playSound(); } catch(e){ toast('Unlock audio by interacting first','warn'); }
+};
+
+$('mp3Input').onchange = e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    localStorage.setItem(SK_MP3, ev.target.result);
+    localStorage.setItem(SK_MP3NM, f.name);
+    selSound = 'custom';
+    savePrefs();
+    buildSoundGrid();
+    checkCustomMp3Display();
+    toast('MP3 uploaded ✓','success');
+  };
+  r.readAsDataURL(f);
+};
+$('clearCustomMp3').onclick = () => {
+  localStorage.removeItem(SK_MP3);
+  localStorage.removeItem(SK_MP3NM);
+  selSound = 'bell';
+  savePrefs();
+  buildSoundGrid();
+  checkCustomMp3Display();
+  toast('Custom sound removed','info');
+};
+function checkCustomMp3Display(){
+  const row = $('customMp3Row');
+  const name = localStorage.getItem(SK_MP3NM);
+  if(name){ row.style.display='flex'; $('customMp3Name').textContent=name; }
+  else row.style.display='none';
+}
+
+/* ══ BACKUP & RESTORE ═════════════════════════════════════════════════ */
+$('exportBtn').onclick = () => {
+  const data = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    tasks,
+    notes,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `timexpert-backup-${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Backup exported ✓','success');
+};
+
+$('importBtn').onclick = () => $('importInput').click();
+$('importInput').onchange = e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      const tCount = data.tasks?.length || 0;
+      const nCount = data.notes?.length || 0;
+      confirm2('📥','Import Backup?',
+        `This will merge ${tCount} tasks and ${nCount} notes into your current data.`,
+        'Import','btn-primary',
+        () => {
+          if(data.tasks) tasks = [...data.tasks, ...tasks.filter(t => !data.tasks.find(x=>x.id===t.id))];
+          if(data.notes) notes = [...data.notes, ...notes.filter(n => !data.notes.find(x=>x.id===n.id))];
+          saveTasks(); saveNotes();
+          renderAll(); renderNotes();
+          toast(`Imported ${tCount} tasks & ${nCount} notes ✓`,'success');
+        }
+      );
+    }catch(err){
+      toast('Invalid backup file','error');
+    }
+    $('importInput').value = '';
+  };
+  r.readAsText(f);
+};
+
+function confirm2(icon, title, msg, okLabel, okClass, cb){
+  $('confirmIcon').textContent  = icon;
+  $('confirmTitle').textContent = title;
+  $('confirmMsg').textContent   = msg;
+  $('confirmOk').className = `btn ${okClass}`;
+  $('confirmOk').style.flex = '1';
+  $('confirmOk').style.justifyContent = 'center';
+  $('confirmOk').textContent = okLabel;
+  confirmOverlay.classList.add('open');
+  $('confirmOk').onclick  = () => { confirmOverlay.classList.remove('open'); cb(); };
+  $('confirmCancel').onclick = () => confirmOverlay.classList.remove('open');
+}
+
+$('clearDataBtn').onclick = () => {
+  confirm2('⚠️','Clear All Data?',
+    'This permanently deletes ALL tasks and notes. This cannot be undone.',
+    'Yes, Clear Everything','btn-danger',
+    () => {
+      tasks = []; notes = [];
+      saveTasks(); saveNotes();
+      renderAll(); renderNotes();
+      toast('All data cleared','info');
+    }
+  );
+};
+
+/* ══ PAGE NAV ═════════════════════════════════════════════════════════ */
+function navigateTo(page){
+  if(currentPage === page) return;
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pg = $('page-'+page);
+  pg.classList.add('active');
+  pg.classList.add('page-enter');
+  setTimeout(()=>pg.classList.remove('page-enter'),400);
+  document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+  // Show/hide FAB per page
+  $('fabBtn').style.display = page === 'settings' ? 'none' : 'flex';
+
+  if(page === 'notes') renderNotes();
+}
+
+/* ══ PWA & SERVICE WORKER ═════════════════════════════════════════════ */
+function registerSW(){
+  if(!('serviceWorker' in navigator)) return;
+  const swCode = `
+const CACHE = 'timexpert-v2';
+const URLS  = [location.href];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(URLS)).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))
+    ).then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  if(e.request.method !== 'GET') return;
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      const fresh = fetch(e.request).then(resp => {
+        if(resp && resp.status === 200){
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(()=>cached);
+      return cached || fresh;
+    })
+  );
+});
+
+self.addEventListener('push', e => {
+  const data = e.data?.json() || {};
+  self.registration.showNotification(data.title||'TimeXpert', {
+    body: data.body||'',
+    icon: data.icon||''
+  });
+});
+`;
+  const blob = new Blob([swCode], {type:'text/javascript'});
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl)
+    .then(() => updateCacheStatus())
+    .catch(() => {});
+}
+
+function updateCacheStatus(){
+  if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+    $('cacheStatus').textContent = '✅ Offline-ready · Cached';
+  } else {
+    $('cacheStatus').textContent = '⏳ Caching on next visit…';
+  }
+}
+$('refreshCacheBtn').onclick = () => {
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r=>r.update());
+    });
+    toast('Cache refresh requested','info');
+    setTimeout(updateCacheStatus,1500);
+  }
+};
+
+/* ── PWA Install ────────────────────────────────────────────────── */
+function checkPWAInstall(){
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstall = e;
+    $('installBanner').classList.remove('hidden');
+  });
+  window.addEventListener('appinstalled', () => {
+    $('installBanner').classList.add('hidden');
+    toast('TimeXpert installed ✓','success');
+  });
+}
+$('installBtn').onclick = async () => {
+  if(!deferredInstall) return;
+  deferredInstall.prompt();
+  const res = await deferredInstall.userChoice;
+  deferredInstall = null;
+  if(res.outcome === 'accepted') $('installBanner').classList.add('hidden');
+};
+$('installClose').onclick = () => $('installBanner').classList.add('hidden');
+
+/* ── Offline detection ──────────────────────────────────────────── */
+function checkNetStatus(){
+  const b = $('offlineBanner');
+  const update = () => b.classList.toggle('show', !navigator.onLine);
+  update();
+  window.addEventListener('online',  update);
+  window.addEventListener('offline', update);
+}
+
+/* ══ EVENTS ═══════════════════════════════════════════════════════════ */
+function attachEvents(){
+  // Nav
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.onclick = () => navigateTo(btn.dataset.page);
+  });
+
+  // FAB — opens task form on schedule page, note editor on notes page
+  $('fabBtn').onclick = () => {
+    if(currentPage === 'schedule') openForm();
+    else openNoteEditor();
+  };
+
+  // Form
+  $('formClose').onclick   = closeForm;
+  $('formCancel').onclick  = closeForm;
+  $('formSave').onclick    = saveTask;
+  formOverlay.onclick = e => { if(e.target===formOverlay) closeForm(); };
+
+  // Detail
+  $('detailClose').onclick = closeDetail;
+  detailOverlay.onclick = e => { if(e.target===detailOverlay) closeDetail(); };
+
+  // Note editor
+  $('newNoteBtn').onclick  = () => openNoteEditor();
+  $('noteClose').onclick   = closeNoteEditor;
+  $('noteCancel').onclick  = closeNoteEditor;
+  $('noteSave').onclick    = () => saveNotePayload(true);
+  noteOverlay.onclick = e => { if(e.target===noteOverlay) closeNoteEditor(); };
+
+  // Note search
+  $('noteSearch').addEventListener('input', () => renderNotes());
+
+  // Confirm overlay bg click
+  confirmOverlay.onclick = e => { if(e.target===confirmOverlay) confirmOverlay.classList.remove('open'); };
+
+  // Priority buttons
+  document.querySelectorAll('.pri-btn').forEach(b => {
+    b.onclick = () => { selPri = b.dataset.pri; renderPriBtns(); };
+  });
+
+  // Reminder pills
+  document.querySelectorAll('.rem-pill').forEach(p => {
+    p.onclick = () => { selRem = p.dataset.min; renderRemPills(); toggleCustRem(); };
+  });
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      currentTab = t.dataset.tab;
+      renderTab(currentTab);
+    };
+  });
+
+  // Filter
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      currentFilter = b.dataset.filter;
+      renderAll();
+    };
+  });
+
+  // Search
+  $('searchInput').addEventListener('input', e => { searchQ = e.target.value; renderAll(); });
+
+  // Sort
+  $('sortSelect').onchange = e => { sortMode = e.target.value; renderAll(); };
+
+  // Notif btn → switch to upcoming
+  $('notifBtn').onclick = () => {
+    navigateTo('schedule');
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelector('.tab[data-tab="upcoming"]').classList.add('active');
+    currentTab = 'upcoming';
+    renderTab('upcoming');
+  };
+
+  // Snooze prefs
+  $('snoozeDur').onchange = savePrefs;
+  $('toggleSound').onchange = savePrefs;
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if(e.key==='Escape'){
+      closeForm(); closeDetail(); closeNoteEditor();
+      confirmOverlay.classList.remove('open');
+      alarmOverlay.classList.remove('open');
+    }
+    if(e.key==='Enter' && e.ctrlKey){
+      if(formOverlay.classList.contains('open'))   saveTask();
+      if(noteOverlay.classList.contains('open'))   saveNotePayload(true);
+    }
+  });
+}
+
+/* ══ HELPERS ══════════════════════════════════════════════════════════ */
+function uid(){ return 'tx_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cap(s){ return s?s[0].toUpperCase()+s.slice(1):''; }
+
+/* ── TOAST ──────────────────────────────────────────────────────── */
+const ICONS = {success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+function toast(msg, type='info'){
+  const el = document.createElement('div');
+  el.className = `toast`;
+  el.innerHTML = `<span class="ti-${type}">${ICONS[type]||'ℹ️'}</span>${esc(msg)}`;
+  $('toastWrap').appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),350); }, 2800);
+}
+
+/* ══ SEED DATA ════════════════════════════════════════════════════════ */
+function seedData(){
+  const td  = todayStr();
+  const tmr = (() => { const d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); })();
+  const n3  = (() => { const d=new Date(); d.setDate(d.getDate()+3); return d.toISOString().slice(0,10); })();
+
+  tasks = [
+    {id:uid(),title:'Morning workout',desc:'30 min cardio + stretching',date:td,time:'07:00',status:'done',priority:'high',reminder:'30',custRemMin:30,category:'health',createdAt:Date.now()-5e5},
+    {id:uid(),title:'Team standup meeting',desc:'Daily sync with the dev team',date:td,time:'09:30',status:'pending',priority:'high',reminder:'10',custRemMin:10,category:'work',createdAt:Date.now()-4e5},
+    {id:uid(),title:'Review project proposal',desc:'Read through the client brief and leave comments',date:td,time:'14:00',status:'pending',priority:'med',reminder:'20',custRemMin:20,category:'work',createdAt:Date.now()-3e5},
+    {id:uid(),title:'Call with dentist',desc:'Book appointment for next month',date:td,time:'16:30',status:'pending',priority:'low',reminder:'5',custRemMin:5,category:'health',createdAt:Date.now()-2e5},
+    {id:uid(),title:'Weekly grocery run',desc:'Buy vegetables, fruits & essentials',date:tmr,time:'10:00',status:'pending',priority:'med',reminder:'60',custRemMin:60,category:'personal',createdAt:Date.now()-1e5},
+    {id:uid(),title:'Finish React module',desc:'Complete sections 7–10 of the online course',date:tmr,time:'19:00',status:'pending',priority:'high',reminder:'30',custRemMin:30,category:'study',createdAt:Date.now()},
+    {id:uid(),title:'Pay electricity bill',desc:'Online payment via bank app',date:n3,time:'11:00',status:'pending',priority:'high',reminder:'custom',custRemMin:120,category:'finance',createdAt:Date.now()},
+    {id:uid(),title:'Plan weekend trip',desc:'Research and book accommodation',date:n3,time:'20:00',status:'pending',priority:'low',reminder:'none',custRemMin:0,category:'personal',createdAt:Date.now()},
+  ];
+  notes = [
+    {id:uid(),title:'Welcome to TimeXpert 2.0! 🎉',content:'Your smart daily scheduler is now a full PWA.\n\n✅ Works offline\n📲 Install to home screen\n🔔 Browser notifications\n🎵 Custom alarm sounds\n📝 Full notepad\n💾 Backup & restore\n🟢 WhatsApp sharing\n\nEnjoy planning smarter!',color:'#3b82f6',updatedAt:Date.now(),createdAt:Date.now()},
+    {id:uid(),title:'Shopping list',content:'• Milk\n• Eggs\n• Bread\n• Vegetables\n• Fruit\n• Coffee\n• Oats',color:'#22c55e',updatedAt:Date.now()-3e5,createdAt:Date.now()-3e5},
+  ];
+  saveTasks(); saveNotes();
+}
+
+if(!localStorage.getItem(SK_TASKS) && !localStorage.getItem('timexpert_tasks')){
+  seedData();
+}
+</script>
+</body>
+</html>
