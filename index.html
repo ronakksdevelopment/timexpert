@@ -983,6 +983,30 @@ img{display:block;max-width:100%}
     </div>
 
    <!-- About -->
+    <!-- Install App -->
+    <div class="set-section" id="installSection" style="display:none">
+      <div class="set-hdr">📲 Install App</div>
+      <div class="set-row">
+        <div style="display:flex;align-items:center;gap:16px;width:100%">
+          <div style="width:56px;height:56px;border-radius:16px;background:var(--grad-card);display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0;box-shadow:0 4px 16px rgba(59,130,246,.35)">⏱</div>
+          <div style="flex:1">
+            <div class="set-label" style="font-size:.95rem">TimeXpert</div>
+            <div class="set-desc">Install on your home screen · works offline · no browser bar</div>
+          </div>
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-info">
+          <div class="set-label">Add to Home Screen</div>
+          <div class="set-desc">One tap access, faster load, full-screen experience</div>
+        </div>
+        <div class="set-action">
+          <button class="btn btn-primary" id="installSettingBtn" style="padding:10px 20px">📲 Install</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About -->
     <div class="set-section">
       <div class="set-hdr">ℹ️ About</div>
       <div class="set-row">
@@ -2185,14 +2209,15 @@ function checkPWAInstall(){
     e.preventDefault();
     deferredInstall = e;
     $('installBanner').classList.remove('hidden');
-    const row = $('installSettingRow');
-    if(row) row.style.display = 'flex';
+    const sec = $('installSection');
+    if(sec) sec.style.display = 'block';
   });
   window.addEventListener('appinstalled', () => {
     $('installBanner').classList.add('hidden');
-    const row = $('installSettingRow');
-    if(row) row.style.display = 'none';
-    toast('TimeXpert installed ✓','success');
+    const sec = $('installSection');
+    if(sec) sec.style.display = 'none';
+    deferredInstall = null;
+    toast('TimeXpert installed ✓ App added to home screen','success');
   });
 }
 $('installBtn').onclick = async () => {
@@ -2203,6 +2228,19 @@ $('installBtn').onclick = async () => {
   if(res.outcome === 'accepted') $('installBanner').classList.add('hidden');
 };
 $('installClose').onclick = () => $('installBanner').classList.add('hidden');
+$('installSettingBtn').onclick = async () => {
+  if(!deferredInstall){
+    toast('Already installed or browser does not support install','info');
+    return;
+  }
+  deferredInstall.prompt();
+  const res = await deferredInstall.userChoice;
+  deferredInstall = null;
+  if(res.outcome === 'accepted'){
+    $('installSection').style.display = 'none';
+    $('installBanner').classList.add('hidden');
+  }
+};
 const installSettingBtn = $('installSettingBtn');
 if(installSettingBtn){
   installSettingBtn.onclick = async () => {
