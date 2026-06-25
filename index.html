@@ -982,12 +982,23 @@ img{display:block;max-width:100%}
       </div>
     </div>
 
-    <!-- About -->
+   <!-- About -->
     <div class="set-section">
       <div class="set-hdr">ℹ️ About</div>
       <div class="set-row">
         <div class="set-info"><div class="set-label">TimeXpert</div><div class="set-desc">Version 2.0 · Smart Daily Scheduler PWA</div></div>
         <div class="set-action"><span class="pill pill-blue">PWA</span></div>
+      </div>
+      <div class="set-row" id="installSettingRow" style="display:none">
+        <div style="display:flex;align-items:center;gap:14px;width:100%">
+          <div style="width:52px;height:52px;border-radius:14px;background:var(--grad-card);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;box-shadow:0 4px 14px rgba(59,130,246,.35)">⏱</div>
+          <div class="set-info" style="flex:1">
+            <div class="set-label">Install TimeXpert</div>
+            <div class="set-desc">Add to Home Screen · works offline</div>
+          </div>
+          <button class="btn btn-primary" id="installSettingBtn" style="flex:0;padding:10px 18px">📲 Install</button>
+        </div>
+      </div>
       </div>
       <div class="set-row">
         <div class="set-info"><div class="set-label">Cache Status</div><div class="set-desc" id="cacheStatus">Checking…</div></div>
@@ -2174,9 +2185,13 @@ function checkPWAInstall(){
     e.preventDefault();
     deferredInstall = e;
     $('installBanner').classList.remove('hidden');
+    const row = $('installSettingRow');
+    if(row) row.style.display = 'flex';
   });
   window.addEventListener('appinstalled', () => {
     $('installBanner').classList.add('hidden');
+    const row = $('installSettingRow');
+    if(row) row.style.display = 'none';
     toast('TimeXpert installed ✓','success');
   });
 }
@@ -2188,6 +2203,19 @@ $('installBtn').onclick = async () => {
   if(res.outcome === 'accepted') $('installBanner').classList.add('hidden');
 };
 $('installClose').onclick = () => $('installBanner').classList.add('hidden');
+const installSettingBtn = $('installSettingBtn');
+if(installSettingBtn){
+  installSettingBtn.onclick = async () => {
+    if(!deferredInstall){ toast('Already installed or not available','info'); return; }
+    deferredInstall.prompt();
+    const res = await deferredInstall.userChoice;
+    deferredInstall = null;
+    if(res.outcome === 'accepted'){
+      $('installSettingRow').style.display = 'none';
+      $('installBanner').classList.add('hidden');
+    }
+  };
+}
 
 /* ── Offline detection ──────────────────────────────────────────── */
 function checkNetStatus(){
